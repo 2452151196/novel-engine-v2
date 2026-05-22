@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Test</title>
+<script src="/static/js/vue.global.prod.js"></script>
+</head>
+<body>
+<div id="app">
+  <h1>Vue Test</h1>
+  <p>Title: <input v-model="title" placeholder="title"></p>
+  <p>API Key: <input v-model="apiKey" type="password" placeholder="sk-..."></p>
+  <button @click="create" :disabled="!title || !apiKey">创建项目</button>
+  <p>Status: <span v-html="status"></span></p>
+</div>
+<script>
+const { createApp, ref } = Vue;
+createApp({
+  data() { return { title: '', apiKey: '', status: 'ready' }; },
+  mounted() { console.log('mounted'); },
+  methods: {
+    async create() {
+      console.log('clicked', this.title, this.apiKey);
+      this.status = 'clicked: ' + this.title;
+    }
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

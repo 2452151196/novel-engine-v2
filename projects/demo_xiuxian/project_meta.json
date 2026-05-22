@@ -1,0 +1,12 @@
+{
+  "title": "demo_xiuxian",
+  "genre": "玄幻",
+  "tone": "热血、紧凑",
+  "chapter_count": 10,
+  "words_per_chapter": 3000,
+  "current_chapter": 0,
+  "status": "created",
+  "model": "mimo-v2.5-pro",
+  "created_at": "2026-05-22 09:18:23",
+  "last_modified": "2026-05-22 09:18:23"
+}

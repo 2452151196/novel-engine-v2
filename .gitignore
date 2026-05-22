@@ -1,0 +1,18 @@
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project output (optional, depends if you want generated chapters in repo)
+# projects/*/chapters/
+# projects/*/ai_flavour/

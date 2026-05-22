@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novel Engine v2</title>
+    <script src="/static/js/vue.global.prod.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
+        .app { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+        /* Header */
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; border-bottom: 1px solid #30363d; padding-bottom: 16px; }
+        .header h1 { color: #58a6ff; font-size: 1.5rem; }
+        .header .status { font-size: 0.85rem; color: #8b949e; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: #161b22; border-radius: 8px; padding: 4px; }
+        .tab { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; border: none; background: transparent; color: #8b949e; transition: all 0.2s; }
+        .tab:hover { color: #c9d1d9; }
+        .tab.active { background: #21262d; color: #58a6ff; }
+
+        /* Project selector */
+        .project-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        select, input, button { background: #161b22; border: 1px solid #30363d; color: #c9d1d9; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; }
+        button { cursor: pointer; border-color: #388bfd; color: #58a6ff; }
+        button:hover { background: #1f6feb22; }
+        button.danger { border-color: #f85149; color: #f85149; }
+        button.success { border-color: #3fb950; color: #3fb950; }
+        input:focus, select:focus { outline: none; border-color: #388bfd; }
+
+        /* Cards */
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        .card-title { color: #58a6ff; font-size: 1.1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+        /* Progress */
+        .progress-bar { height: 6px; background: #30363d; border-radius: 3px; overflow: hidden; margin: 8px 0; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #1f6feb, #58a6ff); border-radius: 3px; transition: width 0.3s; }
+
+        /* Logs */
+        .log-entry { padding: 8px 12px; border-left: 2px solid #30363d; margin-bottom: 8px; font-size: 0.85rem; }
+        .log-entry.agent-director { border-color: #f0883e; }
+        .log-entry.agent-actor { border-color: #3fb950; }
+        .log-entry.agent-writer { border-color: #a371f7; }
+        .log-entry.review { border-color: #58a6ff; }
+        .log-entry .log-time { color: #8b949e; font-size: 0.75rem; }
+        .log-entry .log-agent { color: #8b949e; }
+        .log-entry .log-summary { color: #c9d1d9; margin-top: 2px; }
+        .log-entry .issues { color: #f85149; font-size: 0.8rem; margin-top: 4px; }
+
+        /* Chapter list */
+        .chapter-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #21262d; }
+        .chapter-item:last-child { border-bottom: none; }
+        .chapter-item .num { color: #8b949e; width: 60px; }
+        .chapter-item .title { flex: 1; }
+        .chapter-item .actions { display: flex; gap: 8px; }
+
+        /* Report sections */
+        .report-section { margin-bottom: 16px; }
+        .report-section h3 { color: #8b949e; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+        .report-section p, .report-section pre { color: #c9d1d9; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+
+        /* Audit table */
+        .audit-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .audit-table th { text-align: left; color: #8b949e; padding: 8px; border-bottom: 1px solid #30363d; }
+        .audit-table td { padding: 8px; border-bottom: 1px solid #21262d; }
+        .audit-table tr:hover td { background: #1c2128; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; }
+        .badge-pass { background: #3fb95022; color: #3fb950; }
+        .badge-fail { background: #f8514922; color: #f85149; }
+        .badge-run { background: #388bfd22; color: #58a6ff; }
+
+        /* Config form */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .form-grid label { color: #8b949e; font-size: 0.85rem; display: block; margin-bottom: 4px; }
+        .form-grid input, .form-grid select { width: 100%; }
+        .form-full { grid-column: 1 / -1; }
+
+        /* Event log scrollable */
+        .event-log { max-height: 400px; overflow-y: auto; }
+        .event-log::-webkit-scrollbar { width: 6px; }
+        .event-log::-webkit-scrollbar-track { background: transparent; }
+        .event-log::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+        /* Review badges */
+        .check-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; margin: 2px; }
+        .check-ok { background: #3fb95022; color: #3fb950; }
+        .check-err { background: #f8514922; color: #f85149; }
+        .check-run { background: #388bfd22; color: #58a6ff; }
+
+        /* Loading spinner */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { width: 16px; height: 16px; border: 2px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="app">
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1>Novel Engine v2</h1>
+                <div class="status">项目管理 | 审计追踪 | 五道检查关卡</div>
+            </div>
+            <div class="status">
+                <span v-if="currentProject">项目: {{ currentProject }}</span>
+                <span v-if="generating" class="badge badge-run">
+                    <span class="spinner"></span> 生成中...
+                </span>
+                <span v-else class="badge badge-pass">就绪</span>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab" :class="{active: tab==='projects'}" @click="tab='projects'">项目</button>
+            <button class="tab" :class="{active: tab==='generate'}" @click="tab='generate'">生成</button>
+            <button class="tab" :class="{active: tab==='chapters'}" @click="tab='chapters'">章节</button>
+            <button class="tab" :class="{active: tab==='audit'}" @click="tab='audit'">审计日志</button>
+            <button class="tab" :class="{active: tab==='reviews'}" @click="tab='reviews'">检查报告</button>
+        </div>
+
+        <!-- Project List Tab -->
+        <div v-if="tab==='projects'">
+            <div class="card">
+                <div class="card-title">创建新项目</div>
+                <div class="form-grid">
+                    <div><label>小说标题</label><input v-model="newProject.title" placeholder="修仙长生传"></div>
+                    <div><label>类型</label>
+                        <select v-model="newProject.genre">
+                            <option>玄幻</option><option>都市</option><option>仙侠</option>
+                            <option>武侠</option><option>科幻</option><option>奇幻</option>
+                        </select>
+                    </div>
+                    <div><label>基调</label><input v-model="newProject.tone" placeholder="热血、紧凑"></div>
+                    <div><label>章节数</label><input type="number" v-model="newProject.chapter_count" min="1" max="200"></div>
+                    <div><label>每章字数</label><input type="number" v-model="newProject.words_per_chapter" min="500" max="20000"></div>
+                    <div><label>模型</label><input v-model="newProject.model" placeholder="mimo-v2.5-pro"></div>
+                    <div class="form-full"><label>API Key</label><input v-model="newProject.api_key" type="password" placeholder="sk-..." style="width:100%"></div>
+                </div>
+                <button @click="createProject" :disabled="!newProject.title || !newProject.api_key">创建项目</button>
+            </div>
+
+            <!-- 风格参考 -->
+            <div class="card">
+                <div class="card-title">风格参考（可选）
+                    <span v-if="styleRef.has" class="badge badge-pass" style="margin-left:8px">已上传 {{ styleRef.chars }} 字</span>
+                </div>
+                <div style="color:#8b949e;font-size:0.85rem;margin-bottom:12px">
+                    上传一段你喜欢的网文，AI 会学习它的文风来写作。支持上传 .txt 文件或直接粘贴文本。
+                </div>
+                <div v-if="!currentProject" style="color:#8b949e;font-size:0.85rem">
+                    请先创建或加载项目后再上传风格参考。
+                </div>
+                <div v-else>
+                    <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+                        <label style="cursor:pointer;border:1px dashed #30363d;padding:8px 16px;border-radius:6px;color:#58a6ff;font-size:0.9rem" @dragover.prevent @drop.prevent="onStyleDrop">
+                            <input type="file" accept=".txt,.md,.text" @change="onStyleFileSelect" style="display:none" ref="styleFileInput">
+                            📄 选择文件 / 拖放到这里
+                        </label>
+                        <span v-if="styleRef.uploading" class="badge badge-run"><span class="spinner"></span> 分析中...</span>
+                    </div>
+                    <div style="margin-bottom:8px">
+                        <label style="color:#8b949e;font-size:0.85rem">或粘贴参考文本：</label>
+                        <textarea v-model="styleRef.text" placeholder="粘贴一段你喜欢的网文（至少100字）..." style="width:100%;height:120px;background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:8px;border-radius:6px;font-size:0.9rem;resize:vertical;margin-top:4px"></textarea>
+                    </div>
+                    <button @click="uploadStyleText" :disabled="!styleRef.text || styleRef.text.length < 100 || styleRef.uploading">提交文本</button>
+
+                    <!-- 分析结果 -->
+                    <div v-if="styleRef.summary" style="margin-top:12px;padding:12px;background:#0d1117;border-radius:6px;border:1px solid #30363d">
+                        <div style="color:#58a6ff;font-size:0.9rem;margin-bottom:8px">风格分析结果</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:0.85rem">
+                            <div><span style="color:#8b949e">题材：</span>{{ styleRef.summary.genre }}</div>
+                            <div><span style="color:#8b949e">基调：</span>{{ styleRef.summary.tone }}</div>
+                            <div><span style="color:#8b949e">节奏：</span>{{ styleRef.summary.pacing }}</div>
+                            <div><span style="color:#8b949e">对话占比：</span>{{ styleRef.summary.dialogue_ratio }}</div>
+                            <div><span style="color:#8b949e">对话风格：</span>{{ styleRef.summary.dialogue_style }}</div>
+                            <div><span style="color:#8b949e">动作风格：</span>{{ styleRef.summary.action_style }}</div>
+                            <div style="grid-column:1/-1"><span style="color:#8b949e">心理描写：</span>{{ styleRef.summary.inner_monologue }}</div>
+                        </div>
+                    </div>
+
+                    <!-- 已有参考预览 -->
+                    <div v-if="styleRef.preview && !styleRef.summary" style="margin-top:12px">
+                        <div style="color:#8b949e;font-size:0.85rem;margin-bottom:4px">已有参考预览：</div>
+                        <pre style="white-space:pre-wrap;font-size:0.85rem;line-height:1.6;max-height:120px;overflow-y:auto;color:#8b949e;background:#0d1117;padding:8px;border-radius:6px">{{ styleRef.preview }}</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" v-if="projects.length">
+                <div class="card-title">已有项目 ({{ projects.length }})</div>
+                <table class="audit-table">
+                    <thead>
+                        <tr><th>标题</th><th>类型</th><th>状态</th><th>进度</th><th>操作</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="p in projects" :key="p.path" :style="currentProject===p.title?'background:#1c2128':''">
+                            <td>{{ p.title }}</td>
+                            <td>{{ p.genre }}</td>
+                            <td><span class="badge" :class="p.status==='completed'?'badge-pass':p.status==='writing'?'badge-run':'badge-fail'">{{ p.status }}</span></td>
+                            <td>{{ p.current_chapter }}/{{ p.chapter_count }} 章</td>
+                            <td>
+                                <button @click="loadProject(p.path)">加载</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Generate Tab -->
+        <div v-if="tab==='generate'">
+            <div class="card" v-if="!currentProject">
+                <div style="color:#8b949e">请先在「项目」页面创建或加载一个项目</div>
+            </div>
+            <div v-else>
+                <div class="card">
+                    <div class="card-title">
+                        生成章节
+                        <span class="badge badge-run" v-if="generating">{{ generating }}</span>
+                    </div>
+                    <div v-if="generating">
+                        <div>{{ currentStatus.step }}</div>
+                        <div class="progress-bar"><div class="progress-fill" :style="{width: (currentStatus.progress*100)+'%'}"></div></div>
+                        <div style="font-size:0.85rem;color:#8b949e">{{ currentStatus.detail }}</div>
+                        <button class="danger" @click="stopGenerate" style="margin-top:12px">停止</button>
+                    </div>
+                    <div v-else>
+                        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                            <div>
+                                <label>从第</label>
+                                <input type="number" v-model.number="generateFrom" min="1" :max="nextChapter" style="width:80px;margin:0 4px">
+                                <label>章开始</label>
+                            </div>
+                            <button class="success" @click="startGenerate">开始生成</button>
+                            <button @click="continueGenerate">从上次继续</button>
+                        </div>
+                        <div style="margin-top:12px;font-size:0.85rem;color:#8b949e">
+                            已完成: {{ chapters.length }}/{{ projectMeta.chapter_count }} 章
+                            <span v-if="projectMeta.last_modified"> | 最后修改: {{ projectMeta.last_modified }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live event log -->
+                <div class="card" v-if="liveLogs.length">
+                    <div class="card-title">实时事件</div>
+                    <div class="event-log">
+                        <div v-for="(log,i) in liveLogs" :key="i" class="log-entry" :class="'agent-'+(log.agent||'')">
+                            <div class="log-time">{{ log.timestamp }}</div>
+                            <div><span class="log-agent">{{ log.agent }}</span> <span v-if="log.phase">{{ log.phase }}</span></div>
+                            <div class="log-summary">{{ log.summary || log.input_summary || '' }}</div>
+                            <div class="issues" v-if="log.issues&&log.issues.length">
+                                <span v-for="iss in log.issues">❌ {{ iss.type }}: {{ iss.problem }} </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- World/Characters/Plot preview -->
+                <div class="card" v-if="worldSetting">
+                    <div class="card-title">世界观设定</div>
+                    <pre style="white-space:pre-wrap;font-size:0.85rem;line-height:1.6;max-height:200px;overflow-y:auto">{{ worldSetting.substring(0,1000) }}...</pre>
+                </div>
+                <div class="card" v-if="characters">
+                    <div class="card-title">角色设定</div>
+                    <pre style="white-space:pre-wrap;font-size:0.85rem;line-height:1.6;max-height:200px;overflow-y:auto">{{ characters.substring(0,1000) }}...</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chapters Tab -->
+        <div v-if="tab==='chapters'">
+            <div class="card" v-if="chapters.length">
+                <div class="card-title">章节列表 ({{ chapters.length }})</div>
+                <div v-for="ch in chapters" :key="ch.num" class="chapter-item">
+                    <span class="num">第{{ ch.num }}章</span>
+                    <span class="title">{{ ch.title || ('第'+ch.num+'章') }}</span>
+                    <div class="actions">
+                        <button @click="viewChapter(ch.num)">查看</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card" v-else>
+                <div style="color:#8b949e">暂无章节，请先生成</div>
+            </div>
+
+            <!-- Chapter viewer -->
+            <div class="card" v-if="viewingChapter">
+                <div class="card-title">第{{ viewingChapter.num }}章
+                    <button @click="viewingChapter=null" style="margin-left:auto;font-size:0.8rem">关闭</button>
+                </div>
+                <pre style="white-space:pre-wrap;font-size:0.9rem;line-height:1.8">{{ viewingChapter.text }}</pre>
+            </div>
+        </div>
+
+        <!-- Audit Tab -->
+        <div v-if="tab==='audit'">
+            <div class="card">
+                <div class="card-title">AI 审计日志
+                    <button @click="loadAudit" style="margin-left:auto">刷新</button>
+                </div>
+                <table class="audit-table" v-if="auditEntries.length">
+                    <thead>
+                        <tr>
+                            <th>时间</th><th>Agent</th><th>章节</th><th>阶段</th>
+                            <th>检查通过</th><th>检查失败</th><th>问题</th><th>AI味</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(e,i) in auditEntries" :key="i">
+                            <td style="font-size:0.75rem;color:#8b949e">{{ e.timestamp }}</td>
+                            <td>{{ e.agent }}</td>
+                            <td>{{ e.chapter || '-' }}</td>
+                            <td>{{ e.phase || '-' }}</td>
+                            <td>
+                                <span v-for="c in e.checks_passed" :key="c" class="badge badge-pass" style="margin:1px">{{ c }}</span>
+                            </td>
+                            <td>
+                                <span v-for="c in e.checks_failed" :key="c" class="badge badge-fail" style="margin:1px">{{ c }}</span>
+                            </td>
+                            <td>{{ e.issues_count || 0 }}</td>
+                            <td>
+                                <span v-if="e.ai_flavour_score>0" :style="e.ai_flavour_score>50?'color:#f85149':'color:#3fb950'">
+                                    {{ e.ai_flavour_score }}
+                                </span>
+                                <span v-else>-</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div v-else style="color:#8b949e">暂无审计记录</div>
+            </div>
+        </div>
+
+        <!-- Reviews Tab -->
+        <div v-if="tab==='reviews'">
+            <div class="card">
+                <div class="card-title">检查报告</div>
+                <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+                    <select v-model="reviewChapter">
+                        <option v-for="ch in chapters" :key="ch.num" :value="ch.num">第{{ ch.num }}章</option>
+                    </select>
+                    <select v-model="reviewType">
+                        <option value="world">世界观检查</option>
+                        <option value="character">人物检查</option>
+                        <option value="plot">剧情架构</option>
+                        <option value="foreshadow">伏笔检查</option>
+                        <option value="ai_flavour">AI味检测</option>
+                        <option value="quality">质量终检</option>
+                        <option value="dialogue_log">对话记录</option>
+                    </select>
+                    <button @click="loadReview">加载报告</button>
+                </div>
+                <div v-if="reviewReport" style="max-height:500px;overflow-y:auto">
+                    <pre style="white-space:pre-wrap;font-size:0.85rem;line-height:1.6">{{ reviewReport }}</pre>
+                </div>
+                <div v-else style="color:#8b949e">选择章节和报告类型后点击「加载报告」</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script>
+    const { createApp, ref, computed } = Vue;
+
+    createApp({
+    data() {
+        return {
+            appReady: false,
+            tab: 'projects',
+            projects: [],
+            currentProject: '',
+            projectPath: '',
+            generating: false,
+            currentStatus: { step: '', progress: 0, detail: '' },
+            liveLogs: [],
+            chapters: [],
+            viewingChapter: null,
+            worldSetting: '',
+            characters: '',
+            plotOutline: '',
+            generateFrom: 1,
+            nextChapter: 1,
+            auditEntries: [],
+            reviewChapter: 1,
+            reviewType: 'world',
+            reviewReport: '',
+            projectMeta: { chapter_count: 10, last_modified: '' },
+            newProject: {
+                title: '',
+                genre: '玄幻',
+                tone: '热血、紧凑',
+                chapter_count: 10,
+                words_per_chapter: 3000,
+                model: 'mimo-v2.5-pro',
+                api_key: '',
+            },
+            eventSource: null,
+            styleRef: { has: false, chars: 0, text: '', uploading: false, summary: null, preview: '' },
+        };
+    },
+    mounted() {
+        console.log('Vue mounted, loading projects...');
+        this.loadProjects();
+        window.appReady = true;
+    },
+    methods: {
+        async api(url, opts={}) {
+            try {
+                const r = await fetch(url, {
+                    headers: { 'Content-Type': 'application/json' },
+                    ...opts,
+                });
+                const data = await r.json();
+                if (!r.ok) console.error('API error', r.status, data);
+                return data;
+            } catch(e) {
+                console.error('Fetch error for', url, e);
+                return { error: e.message };
+            }
+        },
+        async loadProjects() {
+            const d = await this.api('/api/projects');
+            this.projects = d.projects || [];
+        },
+        async createProject() {
+            console.log('createProject called, newProject:', JSON.stringify(this.newProject));
+            try {
+                const d = await this.api('/api/projects', {
+                    method: 'POST',
+                    body: JSON.stringify(this.newProject),
+                });
+                console.log('Response:', JSON.stringify(d));
+                if (d.error) { alert(d.error); return; }
+                this.currentProject = this.newProject.title;
+                this.projectPath = d.project_path;
+                await this.loadProjects();
+                await this.loadProject(d.project_path);
+                this.tab = 'generate';
+            } catch(e) {
+                console.error('createProject error:', e);
+                alert('请求失败: ' + e.message);
+            }
+        },
+        async loadProject(path) {
+            const id = path.split(/[/\\]/).pop();
+            const d = await this.api('/api/projects/' + encodeURIComponent(id));
+            if (d.error) { alert(d.error); return; }
+            this.currentProject = d.meta.title;
+            this.projectPath = path;
+            this.projectMeta = d.meta;
+            this.chapters = [];
+            for (const ch of (d.chapters_done || [])) {
+                const cd = await this.api('/api/projects/' + encodeURIComponent(id) + '/chapters/' + ch);
+                if (!cd.error) { const match = cd.text ? cd.text.match(/^#\s*(.+)$/m) : null; this.chapters.push({ num: ch, title: match ? match[1] : '第'+ch+'章', text: cd.text }); }
+            }
+            this.nextChapter = (d.chapters_done || []).length + 1;
+            const ws = await this.api('/api/world');
+            this.worldSetting = ws.content || '';
+            const cs = await this.api('/api/characters');
+            this.characters = cs.content || '';
+            const ps = await this.api('/api/plot');
+            this.plotOutline = ps.content || '';
+            await this.loadStyleRef();
+            this.tab = 'generate';
+        },
+        async startGenerate() {
+            if (!this.currentProject) return;
+            const id = this.projectPath.split(/[/\\]/).pop();
+            const d = await this.api('/api/projects/' + encodeURIComponent(id) + '/generate', {
+                method: 'POST',
+                body: JSON.stringify({ start_from: this.generateFrom }),
+            });
+            if (d.error) { alert(d.error); return; }
+            this.generating = this.generateFrom > 1 ? '续写中...' : '生成中...';
+            this._startSSE(id);
+        },
+        async continueGenerate() {
+            this.generateFrom = this.nextChapter;
+            await this.startGenerate();
+        },
+        _startSSE(id) {
+            if (this.eventSource) this.eventSource.close();
+            this.eventSource = new EventSource('/api/events/' + encodeURIComponent(id));
+            this.eventSource.onmessage = (e) => {
+                const d = JSON.parse(e.data);
+                this.currentStatus = d;
+                this.liveLogs.unshift({ timestamp: new Date().toLocaleTimeString(), agent: d.step, summary: d.detail, issues: [] });
+                if (this.liveLogs.length > 100) this.liveLogs.pop();
+                if (d.progress >= 1 || d.detail && d.detail.includes('完成')) {
+                    this.generating = false;
+                    this.loadProject(this.projectPath);
+                    this.loadAudit();
+                }
+            };
+            this.eventSource.onerror = () => {
+                setTimeout(() => { if (this.generating) this._startSSE(id); }, 5000);
+            };
+        },
+        async stopGenerate() {
+            await this.api('/api/stop', { method: 'POST' });
+            this.generating = false;
+        },
+        async viewChapter(num) {
+            const id = this.projectPath.split(/[/\\]/).pop();
+            const d = await this.api('/api/projects/' + encodeURIComponent(id) + '/chapters/' + num);
+            if (!d.error) this.viewingChapter = { num, text: d.text };
+        },
+        async loadAudit() {
+            if (!this.projectPath) return;
+            const id = this.projectPath.split(/[/\\]/).pop();
+            const d = await this.api('/api/projects/' + encodeURIComponent(id) + '/audit');
+            this.auditEntries = d.recent || [];
+        },
+        async loadReview() {
+            if (!this.projectPath) return;
+            const id = this.projectPath.split(/[/\\]/).pop();
+            const d = await this.api('/api/projects/' + encodeURIComponent(id) + '/reviews/' + this.reviewType + '/' + this.reviewChapter);
+            this.reviewReport = d.report || d.error || '无报告';
+        },
+        // ---- 风格参考 ----
+        async uploadStyleText() {
+            if (!this.currentProject || !this.styleRef.text) return;
+            const id = this.projectPath.split(/[/\\]/).pop();
+            this.styleRef.uploading = true;
+            try {
+                const d = await this.api('/api/projects/' + encodeURIComponent(id) + '/style_reference', {
+                    method: 'POST',
+                    body: JSON.stringify({ text: this.styleRef.text }),
+                });
+                if (d.error) { alert(d.error); return; }
+                this.styleRef.has = true;
+                this.styleRef.chars = d.chars || this.styleRef.text.length;
+                this.styleRef.summary = d.style_summary || null;
+            } catch(e) { alert('上传失败: ' + e.message); }
+            finally { this.styleRef.uploading = false; }
+        },
+        async onStyleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            await this._uploadStyleFile(file);
+        },
+        async onStyleDrop(e) {
+            const file = e.dataTransfer.files[0];
+            if (!file) return;
+            await this._uploadStyleFile(file);
+        },
+        async _uploadStyleFile(file) {
+            if (!this.currentProject) { alert('请先创建项目'); return; }
+            const id = this.projectPath.split(/[/\\]/).pop();
+            this.styleRef.uploading = true;
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                const r = await fetch('/api/projects/' + encodeURIComponent(id) + '/style_reference', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const d = await r.json();
+                if (d.error) { alert(d.error); return; }
+                this.styleRef.has = true;
+                this.styleRef.chars = d.chars || 0;
+                this.styleRef.summary = d.style_summary || null;
+                this.styleRef.text = '';
+            } catch(e) { alert('上传失败: ' + e.message); }
+            finally { this.styleRef.uploading = false; }
+        },
+        async loadStyleRef() {
+            if (!this.projectPath) return;
+            const id = this.projectPath.split(/[/\\]/).pop();
+            const d = await this.api('/api/projects/' + encodeURIComponent(id) + '/style_reference');
+            this.styleRef.has = d.has_reference || false;
+            this.styleRef.chars = d.reference_chars || 0;
+            this.styleRef.preview = d.reference_preview || '';
+        },
+    },
+}).mount('#app');
+</script>
+</body>
+</html>
