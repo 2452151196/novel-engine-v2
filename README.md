@@ -19,15 +19,9 @@
 
 ## 🎯 What This Does
 
-Every AI writing tool generates prose. This one **removes the AI taste** before a single word hits the page.
+A multi-agent pipeline that generates web-novel chapters by **removing AI flavor at the prompt level** — not filtering words after generation, but banning similes, emotion labels, and professional metaphors *before* the model writes a single sentence.
 
-| ❌ Typical AI Output | ✅ Novel Engine Output |
-|---------------------|------------------------|
-| "His heart tightened, and he slowly raised his head." | "The floor cracked three inches under his boot." |
-| "A terrifying aura spread like a tsunami." | "The air went cold. The hanging lamps frosted over." |
-| "She felt angry, her fists clenched white." | "Her breath came out hot. The teacup handle snapped in her grip." |
-
-**The rule is simple:** Power is shown through **environmental destruction**, not adjectives. Characters speak; narration carries only space and consequence.
+**Core rule:** Power is shown through **environmental destruction** (cracked floors, displaced air), not adjectives like "terrifying" or "unstoppable". Characters speak; narration carries only space and consequence.
 
 ---
 
@@ -197,15 +191,9 @@ writer = WriterAgent(llm_config, prompt_version="v3")
 
 ### 🎯 这引擎是干嘛的
 
-别的 AI 写作工具生成文字，这个**在生成之前就先把 AI 味去掉**。
+多智能体协同流水线，**在生成之前就先把 AI 味去掉**——不是后处理替换词库，而是从 prompt 层面禁止比喻、否定定义和情绪标签。
 
-| ❌ 典型 AI 输出 | ✅ Novel Engine 输出 |
-|---------------------|------------------------|
-| "他心头一紧，缓缓抬起头。" | "他脚下的地板裂开了三寸。" |
-| "恐怖的气息如海啸般蔓延。" | "空气变冷了。挂灯的表面结了一层霜。" |
-| "她感到愤怒，指节攥得发白。" | "她的呼吸变热了。茶杯柄在她手里断了。" |
-
-**规则很简单：** 力量通过**环境破坏**来体现，不是形容词。角色说话；旁白只负责空间和后果。
+**核心规则：** 力量通过**环境破坏**来体现（地板开裂、空气扭曲），不是形容词。角色说话；旁白只负责空间和后果。
 
 ---
 
