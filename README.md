@@ -191,6 +191,187 @@ writer = WriterAgent(llm_config, prompt_version="v3")
 
 ---
 
+<a name="chinese"></a>
+
+## 中文
+
+### 🎯 这引擎是干嘛的
+
+别的 AI 写作工具生成文字，这个**在生成之前就先把 AI 味去掉**。
+
+| ❌ 典型 AI 输出 | ✅ Novel Engine 输出 |
+|---------------------|------------------------|
+| "他心头一紧，缓缓抬起头。" | "他脚下的地板裂开了三寸。" |
+| "恐怖的气息如海啸般蔓延。" | "空气变冷了。挂灯的表面结了一层霜。" |
+| "她感到愤怒，指节攥得发白。" | "她的呼吸变热了。茶杯柄在她手里断了。" |
+
+**规则很简单：** 力量通过**环境破坏**来体现，不是形容词。角色说话；旁白只负责空间和后果。
+
+---
+
+### 🏗️ 架构
+
+```mermaid
+graph LR
+    A[📋 导演<br/>场景切分] --> B[🎭 演员<br/>角色扮演]
+    B --> C[✍️ 写手<br/>日志 → 散文]
+    C --> D[🔍 编辑<br/>去 AI 味]
+    D --> E[📖 章节.md]
+
+    style A fill:#e1f5fe
+    style B fill:#fff3e0
+    style C fill:#e8f5e9
+    style D fill:#fce4ec
+    style E fill:#f3e5f5
+```
+
+| Agent | 职责 | 核心特性 |
+|-------|------|-------------|
+| **导演** | 按大纲切分场景，分配角色，设定冲突目标 | 节拍意识（钩子 → 加压 → 低估 → 打脸） |
+| **演员** | 按角色档案沉浸式扮演 | 字数限制：主角 80–200 字，配角 30–80 字，龙套 10–30 字 |
+| **写手** | 把原始对话日志升级成完整章节 | **去标签化引擎**：把比喻/术语/情绪标签拆解成物理 prose |
+| **编辑** | 扫描 AI 味高危词并重写 | 零容忍列表：缓缓、淡淡、嘴角上扬、眼中闪过... |
+| **审查** | 检查伏笔、冲突节奏、世界观一致性 | 跨章节记忆通过 `character_file_manager.py` 持久化 |
+
+---
+
+### ⭐ 核心优势
+
+#### 1. 🚫 从 Prompt 层面去 AI 味
+不是后处理替换词库。**SYSTEM_PROMPT_V3** 在生成前就禁止比喻、否定定义和情绪标签：
+- **零比喻** — 禁用 "like"、"as if"、"resembling"。直接描述重量、质地、光线。
+- **肯定式表达** — 不用 "不是 A，而是 B"。直接说它是**什么**。
+- **字面名词** — "blades of light" 变成 "light"。"a mask of porcelain" 变成 "a face"。
+
+#### 2. ⚔️ 物理 Prose 法则
+战斗力量通过环境破坏来体现：
+```
+烂："他的气势恐怖且不可阻挡。"
+好："石地板裂开了蛛网纹。灰尘悬在空中不动。"
+```
+
+#### 3. 🎭 角色隔离
+每个角色独立 prompt。商人不说战斗术语，医师不用金融隐喻。没有角色听起来像 AI。
+
+#### 4. 🚀 快速迭代
+`quick_write.py` 直接把对话日志喂给写手，跳过导演和演员。**5 分钟**出样章。
+
+#### 5. 🔒 风格锁定
+上传参考文本 → `style_learner.py` 提取节奏、动词频率、禁用词表 → 后续章节自动匹配。
+
+---
+
+### 🚀 快速开始
+
+#### 1. 安装
+```bash
+git clone https://github.com/2452151196/novel-engine-v2.git
+cd novel-engine-v2
+pip install -r requirements.txt
+```
+
+#### 2. 配置 API
+```bash
+cp .env.example .env
+# 编辑 .env：
+# OPENAI_API_KEY=your_key_here
+# OPENAI_BASE_URL=https://token-plan-cn.xiaomimimo.com/v1
+# OPENAI_MODEL=mimo-v2.5-pro
+```
+
+#### 3. 测试写手（最快）
+```bash
+python quick_write.py projects/demo_xiuxian/reviews/review_ch001_dialogue_log.md \
+  -w 3000 \
+  -o output.md \
+  --prompt-version v3
+```
+
+#### 4. 启动 Web UI
+```bash
+python webui.py
+# 打开 http://127.0.0.1:7860
+```
+
+---
+
+### 📁 项目结构
+
+```
+novel-engine/
+├── agents/v2/              # 多智能体核心
+│   ├── base.py             # 所有 Agent 的 LLM 调用基类
+│   ├── director.py         # 场景切分与调度
+│   ├── actor.py            # 角色扮演引擎
+│   ├── writer.py           # 对话日志 → 散文（★ 核心）
+│   └── reviewers.py        # 编辑 + 质量 + 伏笔 + 冲突
+├── projects/               # 小说数据（一个文件夹 = 一本书）
+│   └── demo_xiuxian/       # 示例：「霜鸣示警」
+│       ├── world_setting.md
+│       ├── plot_outline.md
+│       ├── style_reference.txt
+│       └── characters/
+│           ├── chuxun.md
+│           └── linyaoer.md
+├── project_manager.py      # 项目/章节/审查的 CRUD
+├── character_file_manager.py # 技能/道具/关系/记忆持久化
+├── style_learner.py        # 从参考文本提取节奏
+├── studio_v2.py            # 完整流水线编排器
+├── quick_write.py          # CLI 快速绕过（★ 开发工具）
+├── webui.py                # Flask Web 界面
+└── README.md
+```
+
+**你实际会修改的文件：**
+| 文件 | 原因 |
+|------|-----|
+| `agents/v2/writer.py` | 编辑 `SYSTEM_PROMPT_V3` 调整文风 |
+| `quick_write.py` | 日常测试输出 |
+| `projects/*/characters/*.md` | 角色档案 |
+| `projects/*/plot_outline.md` | 章节节拍与爽点 |
+
+---
+
+### 📝 示例输出
+
+**输入**（演员原始日志）：
+```
+楚询: 拇指推剑出鞘一指宽。 霜进三寸。可战。
+林药儿: 手从药囊移到剑刃旁... 药典载'阴寒逢魔瘴，其蔓疾者，瘴已成精'。
+```
+
+**写手输出**（去标签化后）：
+> 霜已经爬上了剑身三寸。楚询的拇指搭在护手上，钢刃半出鞘。雾气在冷金属触及的地方变浓了，从灰色变成某种更暗的东西，某种逆着气流移动的东西。
+>
+> 林药儿的手从药囊飘向剑身。她的指尖悬在霜线前一寸，近到能感觉到寒意。霜在逆着风蔓延。她没说话。霜替她回答了。
+
+注意：没有"恐怖"。没有"like"。没有"她感到害怕"。只有霜、拇指、和沉默。
+
+---
+
+### 🛠️ 高级：调参写手
+
+引擎的心脏是 `agents/v2/writer.py`。默认自带三个提示词版本：
+
+| 版本 | 风格 | 用途 |
+|---------|-------|----------|
+| `v3` (默认) | 物理 prose，零比喻，去标签化 | 生产环境 |
+| `cn` | 英文输出，中文 prompt 框架 | legacy fallback |
+| `cn_old` | 全中文 prompt（原版） | 调试 |
+
+CLI 切换：
+```bash
+python quick_write.py ... --prompt-version v3
+```
+
+Python 中：
+```python
+from agents.v2.writer import WriterAgent
+writer = WriterAgent(llm_config, prompt_version="v3")
+```
+
+---
+
 ## 📄 License
 
 MIT © 2452151196
