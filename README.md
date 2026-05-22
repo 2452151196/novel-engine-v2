@@ -67,10 +67,10 @@ Good: "The stone floor spiderwebbed. Dust hung motionless."
 ```
 
 ### 3. 🎭 Character Separation
-Each role gets an independent prompt. Merchants don't use combat metaphors. Physicians don't use financial jargon. No character sounds like the AI.
+Each role gets an independent prompt. A merchant never uses trade vocabulary to describe danger or emotion; a physician never uses medical jargon for social friction. Their profession is shown through *where their eyes go* and *what their hands do*, not through metaphors. No character sounds like the AI.
 
 ### 4. 🚀 Fast Iteration
-`quick_write.py` feeds dialogue logs directly to the Writer, bypassing Director/Actor. Get a sample chapter in **5 minutes**.
+`quick_write.py` feeds dialogue logs directly to the Writer, bypassing Director/Actor. Get a sample chapter in **30 minutes**.
 
 ### 5. 🔒 Style Lock
 Upload a reference text → `style_learner.py` extracts rhythm, verb frequency, and taboo words → subsequent chapters auto-match.
@@ -239,10 +239,10 @@ graph LR
 ```
 
 #### 3. 🎭 角色隔离
-每个角色独立 prompt。商人不说战斗术语，医师不用金融隐喻。没有角色听起来像 AI。
+每个角色独立 prompt。商人从不用商业术语比喻危险或情绪；医师从不用医学术语描述社交摩擦。职业特征只体现在他们的**眼神落点**和**手部动作**，不是比喻。没有角色听起来像 AI。
 
 #### 4. 🚀 快速迭代
-`quick_write.py` 直接把对话日志喂给写手，跳过导演和演员。**5 分钟**出样章。
+`quick_write.py` 直接把对话日志喂给写手，跳过导演和演员。**30 分钟**出样章。
 
 #### 5. 🔒 风格锁定
 上传参考文本 → `style_learner.py` 提取节奏、动词频率、禁用词表 → 后续章节自动匹配。
